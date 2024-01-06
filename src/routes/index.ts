@@ -11,6 +11,6 @@ router.get("/ping", async (_req, res) => {
   return res.send(response);
 });
 
-router.use('/Tradeit', TradeitRouter);
+router.use('/tradeit', TradeitRouter);
 
 export default router;
