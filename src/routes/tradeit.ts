@@ -3,9 +3,7 @@ import TradeitController from "../controllers/tradeit";
 
 const router = express.Router();
 
-router.get("/Images", async (req, res) => {
-  const { gameId, imageId } = req.query;
-
+router.get("/Images", async ({ query: { gameId, imageId } }, res) => {
   if (!gameId || !imageId || typeof gameId !== "string" || typeof imageId !== "string" ) {
     res.status(400).send('Both gameId and imageId are required.');
     return;
