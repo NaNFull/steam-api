@@ -34,6 +34,8 @@ export default class TradeitController {
     // Если файл существует, отправляем его в ответе
     if (fs.existsSync(imageFilePath)) {
       res.type('image/webp').end(fs.readFileSync(imageFilePath));
+
+      return;
     }
 
     try {
