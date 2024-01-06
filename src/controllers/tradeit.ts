@@ -1,7 +1,7 @@
 import path from "path";
 import fs from "fs";
 import {Buffer} from "buffer";
-import {Request, Response} from 'express';
+import { Request, Response, RequestHandler } from 'express';
 
 const imagePath = path.join(__dirname, '../../cache/Tradeit');
 
@@ -15,7 +15,7 @@ export default class TradeitController {
   #urlOld = 'https://old.tradeit.gg';
   #url = 'https://tradeit.gg';
 
-  public async getImages({ query: { gameId, imageId } }: Request, res: Response) {
+  public getImages: RequestHandler = async ({ query: { gameId, imageId } }, res) => {
     if (!gameId || !imageId || typeof gameId !== "string" || typeof imageId !== "string" ) {
       res.status(400).send('Both gameId and imageId are required.');
       return;
@@ -72,7 +72,7 @@ export default class TradeitController {
     }
   }
 
-  public async getData(_req: Request, res: Response) {
+  public getData: RequestHandler = async (_req, res) => {
     const temp2 = 'https://tradeit.gg/api/v2/inventory/data?gameId=730&offset=0&limit=120&sortType=Popularity&searchValue=&minPrice=0&maxPrice=100000&minFloat=0&maxFloat=1&type=1&showTradeLock=true&colors=&showUserListing=true&fresh=true&isForStore=0'
 
     try {
@@ -94,7 +94,7 @@ export default class TradeitController {
     }
   }
 
-  public async getMyData(_req: Request, res: Response) {
+  public getMyData: RequestHandler = async (_req, res) => {
     const temp2 = 'https://tradeit.gg/api/v2/inventory/my/data?fresh=1'
 
     try {
@@ -116,7 +116,7 @@ export default class TradeitController {
     }
   }
 
-  public async getCurrencies(_req: Request, res: Response) {
+  public getCurrencies: RequestHandler = async (_req, res) => {
     const temp2 = 'https://tradeit.gg/api/v2/exchange-rate'
 
     try {
