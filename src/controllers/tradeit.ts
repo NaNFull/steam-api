@@ -29,6 +29,7 @@ export default class Tradeit {
     this.#pathCurrencies = path.join(this.#url, this.#apiRouter, 'exchange-rate');
   }
 
+  // TODO: разделить логику и оптимизировать решение
   public getData: RequestHandler = async ({ url, query: { gameId } }, res) => {
     const urlData = path.join(this.#pathInventory, url);
     const urlCurrencies = path.join(this.#url, this.#pathCurrencies);
@@ -121,6 +122,7 @@ export default class Tradeit {
     res.json(result);
   }
 
+  // TODO: В разработке
   public getMyData: RequestHandler = async (_req, res) => {
     const urlData = path.join(this.#url, this.#pathMyInventory);
     const filePath = path.join(webPath, `tradeit.my.inventory.json`);
@@ -148,6 +150,7 @@ export default class Tradeit {
     }
   }
 
+  // TODO: В разработке
   public getCurrencies: RequestHandler = async (_req, res) => {
     const urlCurrencies = path.join(this.#url, this.#pathCurrencies);
 
