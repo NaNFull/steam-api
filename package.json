@@ -1,7 +1,7 @@
 {
   "name": "steam-api",
   "version": "1.0.0",
-  "description": "",
+  "description": "Steam API",
   "main": "index.js",
   "scripts": {
     "start": "node build/index.js",
@@ -20,7 +20,13 @@
     "ext": "ts",
     "exec": "ts-node src/index.ts"
   },
-  "keywords": [],
+  "keywords": [
+    "Steam API",
+    "NodeJS",
+    "Express",
+    "TSOA",
+    "Swagger"
+  ],
   "author": "",
   "license": "ISC",
   "devDependencies": {
