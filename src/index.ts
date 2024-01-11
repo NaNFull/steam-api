@@ -3,7 +3,6 @@ import morgan from "morgan";
 import swaggerUi from "swagger-ui-express";
 
 import Router from "./routes";
-import {ApplicationRequestHandler} from "express-serve-static-core";
 import cors from "./middleware/cors.middleware";
 
 const PORT = process.env.PORT || 3002;
