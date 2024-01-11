@@ -1,109 +1,163 @@
 import path from "path";
 import fs from "fs";
-import {Buffer} from "buffer";
-import { Request, Response, RequestHandler } from 'express';
+import { RequestHandler } from 'express';
+import {DataTradeit, ITradeitDataResponse} from "../types/tradeit.types";
+import {parseJSON, saveJSON} from "../utils/tradeitUtils";
+import {ISteamSettings} from "../types/steam.types";
+import {fetchData} from "../utils/baseUtils";
 
-const imagePath = path.join(__dirname, '../../cache/Tradeit');
+// Синхронизация данных приложения
+const dataPath = path.join(__dirname, '../../data');
+const webPath = path.join(dataPath, 'web');
 
-// TODO: Временное решение по кешированию картинок, заменить в будущем на Service workers
-// Проверка существования папки Tradeit, и создание ее, если она не существует
-if (!fs.existsSync(imagePath)) {
-  fs.mkdirSync(imagePath);
+// Проверка существования папки data, и создание ее, если она не существует
+if (!fs.existsSync(dataPath)) {
+  fs.mkdirSync(dataPath);
 }
 
-export default class TradeitController {
-  #urlOld = 'https://old.tradeit.gg';
-  #url = 'https://tradeit.gg';
+export default class Tradeit {
+  readonly #urlOld = 'https://old.tradeit.gg';
+  readonly #url = 'https://tradeit.gg';
+  readonly #apiRouter = 'api/v2';
+  readonly #pathInventory: string;
+  readonly #pathMyInventory: string;
+  readonly #pathCurrencies: string;
 
-  public getImages: RequestHandler = async ({ query: { gameId, imageId } }, res) => {
-    if (!gameId || !imageId || typeof gameId !== "string" || typeof imageId !== "string" ) {
-      res.status(400).send('Both gameId and imageId are required.');
-      return;
-    }
-    const gameImagePath = path.join(imagePath, gameId);
-    const imageFilePath = path.join(gameImagePath, `${imageId}.webp`);
-    const url = new URL('/static/img/items-webp-256', this.#urlOld);
-
-    url.pathname = path.join(url.pathname, `${imageId}.webp`);
-
-    // TODO: Временное решение по кешированию картинок, заменить в будущем на Service workers
-    // Проверка существования папки gameId, и создание ее, если она не существует
-    if (!fs.existsSync(gameImagePath)) {
-      fs.mkdirSync(gameImagePath);
-    }
-    // Если файл существует, отправляем его в ответе
-    if (fs.existsSync(imageFilePath)) {
-      res.type('image/webp').end(fs.readFileSync(imageFilePath));
-
-      return;
-    }
-
-    try {
-      const response = await fetch(url);
-
-      console.log('fetch: ', imageId);
-
-      if (!response.ok) {
-        // Если статус не ок, отправляем соответствующий статус и сообщение
-        res.status(response.status).send(await response.text());
-      }
-
-      const contentType = response.headers.get('content-type') ?? '';
-
-      // В данном случае не обязательно поддерживать все форматы изображении
-      if (!contentType.includes('image/webp')) {
-        // Возвращаем ошибку, так как контент не является изображением webp
-        res.type(contentType).status(415).send('Unsupported Media Type: Not an image webp');
-
-        return;
-      }
-
-      // Получаем данные в виде Blob
-      const resultBlob = Buffer.from(await response.arrayBuffer());
-
-      // TODO: Временное решение по кешированию картинок, заменить в будущем на Service workers
-      // Сохраняем изображение на сервере
-      fs.writeFileSync(imageFilePath, resultBlob);
-
-      res.type('image/webp').end(resultBlob);
-    } catch (error) {
-      console.error('Error:', error);
-      res.status(500).send('Internal Server Error');
-    }
+  public constructor() {
+    this.#pathInventory = path.join(this.#url, this.#apiRouter, 'inventory');
+    this.#pathMyInventory = path.join(this.#pathInventory, 'my/data?fresh=1');
+    this.#pathCurrencies = path.join(this.#url, this.#apiRouter, 'exchange-rate');
   }
 
-  public getData: RequestHandler = async (_req, res) => {
-    const temp2 = 'https://tradeit.gg/api/v2/inventory/data?gameId=730&offset=0&limit=120&sortType=Popularity&searchValue=&minPrice=0&maxPrice=100000&minFloat=0&maxFloat=1&type=1&showTradeLock=true&colors=&showUserListing=true&fresh=true&isForStore=0'
+  public getData: RequestHandler = async ({ url, query: { gameId } }, res) => {
+    const urlData = path.join(this.#pathInventory, url);
+    const urlCurrencies = path.join(this.#url, this.#pathCurrencies);
 
-    try {
-      const response = await fetch(temp2);
-
-      if (response.ok) {
-        // Получаем данные от целевого сервера
-        const result = await response.json();
-        console.log(result)
-
-        res.json(result);
-      } else {
-        // Если статус не ок, отправляем соответствующий статус и сообщение
-        res.status(response.status).send(await response.text());
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      res.status(500).send('Internal Server Error');
+    if (!gameId || typeof gameId !== 'string') {
+      console.error('Error: Отсутствует gameId:', gameId);
+      res.status(500).send(`Internal Server Error - Отсутствует gameId: ${gameId}`);
+      return;
     }
+
+    const nowDateValue = new Date().valueOf();
+    const filePath = path.join(dataPath, `steam.${gameId}.json`);
+    const existingData: DataTradeit = parseJSON(filePath);
+    const responsePromise = fetchData<ITradeitDataResponse>(urlData, res);
+
+    const [
+      resultData,
+      resultRates
+    ] = await Promise.all([responsePromise, this.fetchRates()]);
+
+    if (resultData) {
+      resultData.items.map(({
+        id,
+        price,
+        metaMappings,
+        imgURL,
+        priceForTrade,
+        name,
+        steamAppId,
+        steamTags,
+        sitePrice,
+        groupId
+      }) => {
+        let item = existingData[id];
+
+        if (item) {
+          const [_, oldPrice] = item.price[0];
+
+          if (oldPrice !== price) {
+            item.price.unshift([nowDateValue, price]);
+          }
+          item.counts = resultData.counts[id];
+
+        } else {
+          existingData[id] = {
+            id,
+            groupId,
+            price: [[nowDateValue, price]],
+            sitePrice,
+            priceForTrade,
+            metaMappings,
+            imgURL,
+            name,
+            steamAppId,
+            steamTags,
+            counts: resultData.counts[id]
+          }
+        }
+      });
+    }
+    const settingsPath = path.join(dataPath, `steam.settings.json`);
+    const { profitPercent, currency, remainder } = parseJSON<ISteamSettings>(settingsPath);
+    const result = {
+      items: Object.values(existingData).map(({
+        id,
+        price,
+        metaMappings,
+        imgURL,
+        counts,
+        groupId,
+        name,
+        steamAppId,
+        steamTags,
+        priceForTrade,
+        sitePrice,
+        wantedStock,
+        currentStock
+      }) => {
+        const rate = resultRates[currency];
+        const tempPriceUSD = price.map(([date, data]) => ([date, data / 100]));
+        const tempPriceInCurrency = price.map(([date, data]) => ([date, (rate * data) / 100]));
+        const tempPriceTM = price.map(([date, data]) => ([date, (rate * data) / 100 * profitPercent]));
+
+        return {
+          count: counts,
+          currency,
+          id,
+          imgURL,
+          key: id,
+          name,
+          priceInCurrency: tempPriceInCurrency,
+          priceTM: tempPriceTM,
+          priceUSD: tempPriceUSD,
+          remainder,
+          steamAppId: steamAppId,
+
+          // Others
+          steamTags,
+          metaMappings,
+          groupId,
+          priceForTrade,
+          sitePrice,
+          wantedStock,
+          currentStock
+        };
+      })
+    }
+
+    // Сохраняем JSON-объект в файл
+    saveJSON(filePath, existingData);
+
+    res.json(result);
   }
 
   public getMyData: RequestHandler = async (_req, res) => {
-    const temp2 = 'https://tradeit.gg/api/v2/inventory/my/data?fresh=1'
+    const urlData = path.join(this.#url, this.#pathMyInventory);
+    const filePath = path.join(webPath, `tradeit.my.inventory.json`);
+
+    // Проверка существования папки gameId, и создание ее, если она не существует
+    if (!fs.existsSync(webPath)) {
+      fs.mkdirSync(webPath);
+    }
 
     try {
-      const response = await fetch(temp2);
+      const response = await fetch(urlData);
 
       if (response.ok) {
         // Получаем данные от целевого сервера
         const result = await response.json();
-        console.log(result)
 
         res.json(result);
       } else {
@@ -117,15 +171,14 @@ export default class TradeitController {
   }
 
   public getCurrencies: RequestHandler = async (_req, res) => {
-    const temp2 = 'https://tradeit.gg/api/v2/exchange-rate'
+    const urlCurrencies = path.join(this.#url, this.#pathCurrencies);
 
     try {
-      const response = await fetch(temp2);
+      const response = await fetch(urlCurrencies);
 
       if (response.ok) {
         // Получаем данные от целевого сервера
         const result = await response.json();
-        console.log(result)
 
         res.json(result);
       } else {
@@ -136,5 +189,33 @@ export default class TradeitController {
       console.error('Error:', error);
       res.status(500).send('Internal Server Error');
     }
+  }
+
+  public fetchRates = async () => {
+    const settingsPath = path.join(dataPath, `steam.settings.json`);
+    const settingsData = parseJSON<ISteamSettings>(settingsPath);
+    const { rates, checkRates } = settingsData;
+
+    try {
+      if ((new Date().valueOf() - checkRates) / 60 / 1000 > 60) {
+        const response = await fetch(this.#pathCurrencies);
+
+        if (response.ok) {
+          // Получаем данные от целевого сервера
+          const data = await response.json();
+
+          settingsData.rates = data.rates;
+          saveJSON(settingsPath, settingsData);
+
+          return data.rates as Record<string, number>;
+        } else {
+          // Если статус не ок, отправляем соответствующий статус и сообщение
+          console.error('status:', response.status, 'info:', await response.text());
+        }
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+    return rates;
   }
 }
