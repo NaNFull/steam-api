@@ -1,7 +1,10 @@
-node_modules
-temp
-cache
 build
+node_modules
+data/*
+cache
+temp
+
+!data/steam.settings.json
 
 .idea
 yarn.lock
