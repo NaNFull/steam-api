@@ -65,7 +65,20 @@ export interface ItemData {
 
 export type DataTradeit = Record<string, ItemData>;
 
+export interface IResultItemData extends Omit<ItemData, 'price'> {
+  key: number;
+  remainder: number;
+  currency: string;
+  priceUSD: [number, number][];
+  priceTM: [number, number][];
+  priceInCurrency: [number, number][];
+}
 
+export interface IResultData {
+  items: IResultItemData[]
+}
+
+// TODO: Сравнить типы с ITradeitDataResponse
 export interface IResponseData {
   items: Item[];
   counts: Record<string, number>;

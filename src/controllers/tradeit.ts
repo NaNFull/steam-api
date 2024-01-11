@@ -1,7 +1,7 @@
 import path from "path";
 import fs from "fs";
 import { RequestHandler } from 'express';
-import {DataTradeit, ITradeitDataResponse} from "../types/tradeit.types";
+import {DataTradeit, IResultData, ITradeitDataResponse} from "../types/tradeit.types";
 import {parseJSON, saveJSON} from "../utils/tradeitUtils";
 import {ISteamSettings} from "../types/steam.types";
 import {fetchData} from "../utils/baseUtils";
@@ -91,48 +91,26 @@ export default class Tradeit {
     }
     const settingsPath = path.join(dataPath, `steam.settings.json`);
     const { profitPercent, currency, remainder } = parseJSON<ISteamSettings>(settingsPath);
-    const result = {
+    const result: IResultData = {
       items: Object.values(existingData).map(({
         id,
         price,
-        metaMappings,
-        imgURL,
-        counts,
-        groupId,
-        name,
-        steamAppId,
-        steamTags,
-        priceForTrade,
-        sitePrice,
-        wantedStock,
-        currentStock
+        ...opts
       }) => {
         const rate = resultRates[currency];
-        const tempPriceUSD = price.map(([date, data]) => ([date, data / 100]));
-        const tempPriceInCurrency = price.map(([date, data]) => ([date, (rate * data) / 100]));
-        const tempPriceTM = price.map(([date, data]) => ([date, (rate * data) / 100 * profitPercent]));
+        const tempPriceUSD: [number, number][] = price.map(([date, data]) => ([date, data / 100]));
+        const tempPriceInCurrency: [number, number][] = price.map(([date, data]) => ([date, (rate * data) / 100]));
+        const tempPriceTM: [number, number][] = price.map(([date, data]) => ([date, (rate * data) / 100 * profitPercent]));
 
         return {
-          count: counts,
           currency,
           id,
-          imgURL,
           key: id,
-          name,
           priceInCurrency: tempPriceInCurrency,
           priceTM: tempPriceTM,
           priceUSD: tempPriceUSD,
           remainder,
-          steamAppId: steamAppId,
-
-          // Others
-          steamTags,
-          metaMappings,
-          groupId,
-          priceForTrade,
-          sitePrice,
-          wantedStock,
-          currentStock
+          ...opts
         };
       })
     }
