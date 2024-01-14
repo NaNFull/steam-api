@@ -1,19 +1,14 @@
-import path from "path";
-import { RequestHandler } from 'express';
-import {DataTradeit, IResultData, ITradeitDataResponse} from "../types/tradeit.types";
-import {
-  getSettingsSteam,
-  parseJSON,
-  saveJSON,
-  settingsSteamPath
-} from "../utils/baseUtils";
-import {fetchData} from "../utils/baseUtils";
-import dayjs from "dayjs";
-import isNil from "lodash/isNil";
-import {filterRates, getRatesSteam, saveRatesSteam} from "../utils/tradeitUtils";
+import path from 'node:path';
+
+import dayjs from 'dayjs';
+import type { RequestHandler } from 'express';
+import isNil from 'lodash/isNil';
+
+import type { DataTradeit, IResultData, ITradeitDataResponse } from '../types/tradeit.types';
+import { fetchData, getSettingsSteam, parseJSON, saveJSON, settingsSteamPath } from '../utils/baseUtils';
+import { filterRates, getRatesSteam, saveRatesSteam } from '../utils/tradeitUtils';
 
 export default class Tradeit {
-  readonly #urlOld = 'https://old.tradeit.gg';
   readonly #url = 'https://tradeit.gg';
   readonly #pathInventory: string;
   readonly #pathMyInventory: string;
@@ -28,7 +23,7 @@ export default class Tradeit {
   }
 
   // TODO: разделить логику и оптимизировать решение
-  public getData: RequestHandler = async ({ url, query: { gameId } }, res) => {
+  public getData: RequestHandler = async ({ query: { gameId }, url }, res) => {
     const urlData = path.join(this.#pathInventory, url);
 
     if (!gameId || typeof gameId !== 'string') {
@@ -39,29 +34,26 @@ export default class Tradeit {
 
     const nowDateValue = dayjs().valueOf();
     const filePath = path.join(settingsSteamPath, `steam.${gameId}.json`);
-    const existingData: DataTradeit = parseJSON(filePath);
+    const existingData = parseJSON<DataTradeit>(filePath) ?? {};
     const requestRates = this.fetchRates();
     const requestData = fetchData<ITradeitDataResponse>(urlData, res);
 
-    const [
-      resultData,
-      resultRates
-    ] = await Promise.all([requestData, requestRates]);
+    const [resultData, resultRates] = await Promise.all([requestData, requestRates]);
 
     if (resultData) {
-      resultData.items.map(({
+      for (const {
+        groupId,
         id,
-        price,
-        metaMappings,
         imgURL,
-        priceForTrade,
+        metaMappings,
         name,
-        steamAppId,
-        steamTags,
+        price,
+        priceForTrade,
         sitePrice,
-        groupId
-      }) => {
-        let item = existingData[id];
+        steamAppId,
+        steamTags
+      } of resultData.items) {
+        const item = existingData[id];
 
         if (item) {
           const [_, oldPrice] = item.prices[0];
@@ -70,61 +62,56 @@ export default class Tradeit {
             item.prices.unshift([nowDateValue, price]);
           }
           item.counts = resultData.counts[id];
-
         } else {
           existingData[id] = {
-            id,
+            counts: resultData.counts[id],
             groupId,
+            id,
+            imgURL,
+            metaMappings,
+            name,
+            priceForTrade,
             prices: [[nowDateValue, price]],
             sitePrice,
-            priceForTrade,
-            metaMappings,
-            imgURL,
-            name,
             steamAppId,
-            steamTags,
-            counts: resultData.counts[id]
-          }
+            steamTags
+          };
         }
-      });
+      }
     }
 
-    const { profitPercent, currency, remainder } = getSettingsSteam();
+    const { currency = 'RUB', profitPercent = 0.7, remainder = 2 } = getSettingsSteam() ?? {};
     const result: IResultData = {
-      items: Object.values(existingData).map(({
-        id,
-        prices,
-        ...opts
-      }) => {
+      items: Object.values(existingData).map(({ id, prices, ...opts }) => {
         const rate = resultRates[currency];
         const tempPrice = prices.map(([date, data], index) => ({
-          id: index,
           date,
+          id: index,
           priceInCurrency: (rate * data) / 100,
-          priceTM: (rate * data) / 100 * profitPercent,
+          priceTM: ((rate * data) / 100) * profitPercent,
           priceUSD: data / 100
         }));
-        const { priceTM, priceInCurrency, priceUSD } = tempPrice[0];
+        const { priceInCurrency, priceTM, priceUSD } = tempPrice[0];
 
         return {
           currency,
           id,
           key: id,
-          prices: tempPrice,
+          priceInCurrency,
           priceTM,
           priceUSD,
-          priceInCurrency,
+          prices: tempPrice,
           remainder,
           ...opts
         };
       })
-    }
+    };
 
     // Сохраняем JSON-объект в файл
     saveJSON(filePath, existingData);
 
     res.json(result);
-  }
+  };
 
   // TODO: В разработке
   public getMyData: RequestHandler = async (_req, res) => {
@@ -152,7 +139,7 @@ export default class Tradeit {
       console.error('Error:', error);
       res.status(500).send('Internal Server Error getMyData');
     }
-  }
+  };
 
   public getCurrencies: RequestHandler = async (_req, res) => {
     const urlCurrencies = path.join(this.#url, this.#pathCurrencies);
@@ -173,16 +160,16 @@ export default class Tradeit {
       console.error('Error:', error);
       res.status(500).send('Internal Server Error getCurrencies');
     }
-  }
+  };
 
   // TODO: Оптимизировать код
   public fetchRates = async () => {
-    const { defaultRates } = getSettingsSteam();
-    const { checkRates = 0, rates } = getRatesSteam();
-    const nowDate = new Date().valueOf();
+    const { defaultRates } = getSettingsSteam() ?? {};
+    const { checkRates = 0, rates } = getRatesSteam() ?? {};
+    const nowDate = Date.now();
 
     try {
-      if ((nowDate - checkRates) / 60 / 1000 > 60 ||  isNil(rates)) {
+      if ((nowDate - checkRates) / 60 / 1000 > 60 || isNil(rates)) {
         const response = await fetch(this.#pathCurrencies);
 
         if (response.ok) {
@@ -192,7 +179,7 @@ export default class Tradeit {
           saveRatesSteam({
             checkRates: nowDate,
             rates: data.rates
-          })
+          });
 
           return filterRates(defaultRates, data.rates as Record<string, number>);
         } else {
@@ -205,5 +192,5 @@ export default class Tradeit {
     }
 
     return filterRates(defaultRates, rates);
-  }
+  };
 }

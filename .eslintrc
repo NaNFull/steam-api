@@ -1,0 +1,265 @@
+{
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "warnOnUnsupportedTypeScriptVersion": false,
+    "ecmaVersion": "latest",
+    "project": "tsconfig.json",
+    "sourceType": "module",
+    "parser": {
+      "js": "@babel/eslint-parser",
+      "ts": "@typescript-eslint/parser"
+    }
+  },
+  "extends": [
+    "alloy",
+    "eslint:recommended",
+    "plugin:prettier/recommended",
+    "plugin:unicorn/recommended",
+    "plugin:import/recommended",
+    "plugin:lodash/recommended",
+    "plugin:you-dont-need-lodash-underscore/compatible"
+  ],
+  "plugins": [
+    "prettier",
+    "simple-import-sort",
+    "import",
+    "unused-imports",
+    "unicorn",
+    "sort-destructure-keys",
+    "sort-keys-fix",
+    "classnames",
+    "lodash"
+  ],
+  "env": {
+    "node": true,
+    "browser": true,
+    "jest": true
+  },
+  "rules": {
+    "lodash/prefer-lodash-method": "off",
+    "lodash/prefer-lodash-typecheck": "off",
+    "you-dont-need-lodash-underscore/is-nil": "off",
+    "unicorn/no-nested-ternary": "off",
+    "unicorn/filename-case": "off",
+    "unicorn/prevent-abbreviations": "off",
+    "unicorn/no-null": "off",
+    "unicorn/no-empty-file": "off",
+    "unused-imports/no-unused-imports": "error",
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          "lodash"
+        ]
+      }
+    ],
+    "import/no-unresolved": "off",
+    "prettier/prettier": [
+      "error",
+      {
+        "printWidth": 120,
+        // use 2 spaces for indentation
+        "tabWidth": 2,
+        // use spaces instead of indentations
+        "useTabs": false,
+        // semicolon at the end of the line
+        "semi": true,
+        // use single quotes
+        "singleQuote": true,
+        // object's key is quoted only when necessary
+        "quoteProps": "as-needed",
+        // no comma at the end
+        "trailingComma": "none",
+        // spaces are required at the beginning and end of the braces
+        "bracketSpacing": true,
+        // brackets are required for arrow function parameter, even when there is only one parameter
+        "arrowParens": "always",
+        // format the entire contents of the file
+        "rangeStart": 0,
+        // no need to write the beginning @prettier of the file
+        "requirePragma": false,
+        // No need to automatically insert @prettier at the beginning of the file
+        "insertPragma": false,
+        // use default break criteria
+        "proseWrap": "preserve",
+        // decide whether to break the html according to the display style
+        "htmlWhitespaceSensitivity": "css",
+        // vue files script and style tags indentation
+        "vueIndentScriptAndStyle": true,
+        // lf for newline
+        "endOfLine": "lf",
+        // formats quoted code embedded
+        "embeddedLanguageFormatting": "auto"
+      }
+    ],
+    "simple-import-sort/imports": "error",
+    "simple-import-sort/exports": "error",
+    "max-params": ["error", 6],
+    "max-nested-callbacks": ["error", 5],
+    "no-return-await": "error",
+    "sort-vars": ["error", { "ignoreCase": false }],
+    "sort-keys": ["error", "asc", {"caseSensitive": true, "natural": false, "minKeys": 2}],
+    "sort-destructure-keys/sort-destructure-keys": 2,
+    "sort-keys-fix/sort-keys-fix": "warn",
+    "classnames/prefer-classnames-function": ["error", {
+      "maxSpaceSeparetedClasses": 20,
+      "functionName": "clsx"
+    }]
+  },
+  "ignorePatterns": [
+    "build",
+    "data",
+    "docs",
+    "public",
+    "temp",
+    ".eslintrc",
+    ".yarn"
+  ],
+  "overrides": [{
+    "files": ["*.ts"],
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+      "ecmaVersion": "latest",
+      "project": "tsconfig.json",
+      "sourceType": "module"
+    },
+    "plugins": [
+      "import",
+      "unused-imports",
+      "prettier",
+      "simple-import-sort",
+      "unicorn",
+      "sort-destructure-keys",
+      "sort-keys-fix",
+      "@typescript-eslint",
+      "lodash"
+    ],
+    "extends": [
+      "alloy",
+      "alloy/typescript",
+      "eslint:recommended",
+      "plugin:@typescript-eslint/recommended",
+      "plugin:@typescript-eslint/stylistic",
+      "plugin:prettier/recommended",
+      "plugin:unicorn/recommended",
+      "plugin:import/recommended",
+      "plugin:lodash/recommended",
+      "plugin:you-dont-need-lodash-underscore/compatible"
+    ],
+    "rules": {
+      "arrow-body-style": ["error", "as-needed"],
+      "prefer-destructuring": ["error", {
+        "VariableDeclarator": {
+          "array": false,
+          "object": true
+        },
+        "AssignmentExpression": {
+          "array": true,
+          "object": false
+        }
+      }, {
+        "enforceForRenamedProperties": false
+      }],
+      "lodash/prefer-lodash-method": "off",
+      "lodash/prefer-lodash-typecheck": "off",
+      "you-dont-need-lodash-underscore/is-nil": "off",
+      "@typescript-eslint/await-thenable": "error",
+      "@typescript-eslint/require-await": "error",
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-invalid-this": "off",
+      "@typescript-eslint/prefer-optional-chain": "error",
+      "@typescript-eslint/prefer-nullish-coalescing": "error",
+      "@typescript-eslint/array-type": "error",
+      "@typescript-eslint/prefer-for-of": "error",
+      "@typescript-eslint/prefer-function-type": "error",
+      "@typescript-eslint/prefer-includes": "error",
+      "@typescript-eslint/prefer-string-starts-ends-with": "error",
+      "@typescript-eslint/consistent-type-imports":  [
+        "error",
+        {
+          "prefer": "type-imports"
+        }
+      ],
+      "@typescript-eslint/naming-convention": [
+        "error",
+        {
+          "selector": "interface",
+          "format": ["PascalCase"]
+        }
+      ],
+      "no-explicit-any": "off",
+      "unicorn/prefer-at": ["error"],
+      "unicorn/prefer-string-replace-all": ["error"],
+      "unicorn/prefer-module": "off",
+      "unicorn/no-nested-ternary": "off",
+      "unicorn/filename-case": "off",
+      "unicorn/prevent-abbreviations": "off",
+      "unicorn/no-null": "off",
+      "unicorn/no-empty-file": "off",
+      "unused-imports/no-unused-imports": "error",
+      "no-restricted-imports": [
+        "error",
+        {
+          "paths": [
+            "lodash"
+          ]
+        }
+      ],
+      "import/no-unresolved": "off",
+      "prettier/prettier": [
+        "error",
+        {
+          "printWidth": 120,
+          // use 2 spaces for indentation
+          "tabWidth": 2,
+          // use spaces instead of indentations
+          "useTabs": false,
+          // semicolon at the end of the line
+          "semi": true,
+          // use single quotes
+          "singleQuote": true,
+          // object's key is quoted only when necessary
+          "quoteProps": "as-needed",
+          // no comma at the end
+          "trailingComma": "none",
+          // spaces are required at the beginning and end of the braces
+          "bracketSpacing": true,
+          // brackets are required for arrow function parameter, even when there is only one parameter
+          "arrowParens": "always",
+          // format the entire contents of the file
+          "rangeStart": 0,
+          // no need to write the beginning @prettier of the file
+          "requirePragma": false,
+          // No need to automatically insert @prettier at the beginning of the file
+          "insertPragma": false,
+          // use default break criteria
+          "proseWrap": "preserve",
+          // decide whether to break the html according to the display style
+          "htmlWhitespaceSensitivity": "css",
+          // vue files script and style tags indentation
+          "vueIndentScriptAndStyle": true,
+          // lf for newline
+          "endOfLine": "lf",
+          // formats quoted code embedded
+          "embeddedLanguageFormatting": "auto"
+        }
+      ],
+      "simple-import-sort/imports": "error",
+      "simple-import-sort/exports": "error",
+      "max-params": ["error", 6],
+      "max-nested-callbacks": ["error", 5],
+      "no-return-await": "error",
+      "sort-vars": ["error", { "ignoreCase": false }],
+      "sort-keys": ["error", "asc", {"caseSensitive": true, "natural": false, "minKeys": 2}],
+      "sort-destructure-keys/sort-destructure-keys": 2,
+      "sort-keys-fix/sort-keys-fix": "warn",
+      "classnames/prefer-classnames-function": ["error", {
+        "maxSpaceSeparetedClasses": 20,
+        "functionName": "clsx"
+      }]
+    }
+  }]
+}

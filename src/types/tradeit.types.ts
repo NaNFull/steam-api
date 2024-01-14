@@ -53,7 +53,7 @@ export interface ItemData {
   metaMappings: {
     category: number;
     item: number;
-  },
+  };
   imgURL: string;
   name: string;
   steamAppId: number;
@@ -84,7 +84,7 @@ export interface IResultItemData extends Omit<ItemData, 'prices'> {
 }
 
 export interface IResultData {
-  items: IResultItemData[]
+  items: IResultItemData[];
 }
 
 // TODO: Сравнить типы с ITradeitDataResponse
