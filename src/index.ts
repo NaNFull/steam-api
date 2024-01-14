@@ -10,11 +10,13 @@ const PORT = process.env.PORT || 3002;
 const app: Application = express();
 
 app.use(express.json());
-app.use(morgan("tiny"));
 app.use(express.static("public"));
 
 // Добавляем заголовки CORS
 app.use(cors);
+
+// TODO: Доработать логику morgan
+app.use(morgan("tiny"));
 
 app.use(
   "/api-docs",

@@ -5,6 +5,7 @@ import {DataTradeit, IResultData, ITradeitDataResponse} from "../types/tradeit.t
 import {parseJSON, saveJSON} from "../utils/tradeitUtils";
 import {ISteamSettings} from "../types/steam.types";
 import {fetchData} from "../utils/baseUtils";
+import dayjs from "dayjs";
 
 // Синхронизация данных приложения
 const dataPath = path.join(__dirname, '../../data');
@@ -40,7 +41,7 @@ export default class Tradeit {
       return;
     }
 
-    const nowDateValue = new Date().valueOf();
+    const nowDateValue = dayjs().valueOf();
     const filePath = path.join(dataPath, `steam.${gameId}.json`);
     const existingData: DataTradeit = parseJSON(filePath);
     const responsePromise = fetchData<ITradeitDataResponse>(urlData, res);
@@ -66,10 +67,10 @@ export default class Tradeit {
         let item = existingData[id];
 
         if (item) {
-          const [_, oldPrice] = item.price[0];
+          const [_, oldPrice] = item.prices[0];
 
           if (oldPrice !== price) {
-            item.price.unshift([nowDateValue, price]);
+            item.prices.unshift([nowDateValue, price]);
           }
           item.counts = resultData.counts[id];
 
@@ -77,7 +78,7 @@ export default class Tradeit {
           existingData[id] = {
             id,
             groupId,
-            price: [[nowDateValue, price]],
+            prices: [[nowDateValue, price]],
             sitePrice,
             priceForTrade,
             metaMappings,
@@ -95,21 +96,27 @@ export default class Tradeit {
     const result: IResultData = {
       items: Object.values(existingData).map(({
         id,
-        price,
+        prices,
         ...opts
       }) => {
         const rate = resultRates[currency];
-        const tempPriceUSD: [number, number][] = price.map(([date, data]) => ([date, data / 100]));
-        const tempPriceInCurrency: [number, number][] = price.map(([date, data]) => ([date, (rate * data) / 100]));
-        const tempPriceTM: [number, number][] = price.map(([date, data]) => ([date, (rate * data) / 100 * profitPercent]));
+        const tempPrice = prices.map(([date, data], index) => ({
+          id: index,
+          date,
+          priceInCurrency: (rate * data) / 100,
+          priceTM: (rate * data) / 100 * profitPercent,
+          priceUSD: data / 100
+        }));
+        const { priceTM, priceInCurrency, priceUSD } = tempPrice[0];
 
         return {
           currency,
           id,
           key: id,
-          priceInCurrency: tempPriceInCurrency,
-          priceTM: tempPriceTM,
-          priceUSD: tempPriceUSD,
+          prices: tempPrice,
+          priceTM,
+          priceUSD,
+          priceInCurrency,
           remainder,
           ...opts
         };

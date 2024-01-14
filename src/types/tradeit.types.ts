@@ -47,7 +47,7 @@ export interface MetaMappings {
 export interface ItemData {
   id: number;
   groupId: number;
-  price: [number, number][];
+  prices: [number, number][];
   sitePrice: number;
   priceForTrade: number;
   metaMappings: {
@@ -65,13 +65,22 @@ export interface ItemData {
 
 export type DataTradeit = Record<string, ItemData>;
 
-export interface IResultItemData extends Omit<ItemData, 'price'> {
+export interface IPriceHistory {
+  id: number;
+  date: number;
+  priceUSD: number;
+  priceTM: number;
+  priceInCurrency: number;
+}
+
+export interface IResultItemData extends Omit<ItemData, 'prices'> {
   key: number;
   remainder: number;
   currency: string;
-  priceUSD: [number, number][];
-  priceTM: [number, number][];
-  priceInCurrency: [number, number][];
+  prices: IPriceHistory[];
+  priceUSD: number;
+  priceInCurrency: number;
+  priceTM: number;
 }
 
 export interface IResultData {
