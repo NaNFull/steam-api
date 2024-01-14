@@ -1,16 +1,10 @@
 import express from "express";
+import BaseRouter from "./base";
 import TradeitRouter from "./tradeit";
-import PingController from "../controllers/ping";
 
 const router = express.Router();
 
-// Пинг роутера
-router.get("/ping", async (_req, res) => {
-  const controller = new PingController();
-  const response = await controller.getMessage();
-  return res.send(response);
-});
-
+router.use('/inventory', BaseRouter)
 router.use('/tradeit', TradeitRouter);
 
 export default router;
