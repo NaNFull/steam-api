@@ -1,40 +1,33 @@
 import fs from "fs";
+import {IRatesDefault, IRatesSteam} from "../types/steam.types";
+import {parseJSON, saveJSON} from "./baseUtils";
+import path from "path";
 
-export interface IWebData {
-  id: number;
-  name: string;
-  count: number;
-  steamAppId: number;
-  priceUSD: number;
-  priceInCurrency: string;
-  priceTM: string;
-  image: string;
+const dataPath = path.join(__dirname, '../../data');
+const tradeitPath = path.join(dataPath, 'tradeit');
+const ratesPath = path.join(tradeitPath, `temp.rates.json`);
+
+export const getRatesSteam = () => {
+    // Проверка существования папки tradeit, и создание ее, если она не существует
+    if (!fs.existsSync(tradeitPath)) {
+      fs.mkdirSync(tradeitPath);
+    }
+
+    return parseJSON<IRatesSteam>(ratesPath);
 }
 
-// export const mergeData = (fileData: IWebData, response: IWebData): IWebData => {
-//     return;
-// }
+export const saveRatesSteam = (data: IRatesSteam) => {
+    // Проверка существования папки tradeit, и создание ее, если она не существует
+    if (!fs.existsSync(tradeitPath)) {
+      fs.mkdirSync(tradeitPath);
+    }
 
-// Преобразование даты в UNIX timestamp
-export const dateToTimestamp = (date: Date) => {
-  return Math.floor(date.getTime() / 1000); // делим на 1000, чтобы получить секунды вместо миллисекунд
+    saveJSON(ratesPath, data);
 }
 
-// Преобразование UNIX timestamp в дату
-export const timestampToDate = (timestamp: number) => {
-  return new Date(timestamp * 1000); // умножаем на 1000, чтобы получить миллисекунды
-}
-
-// Парсим JSON-файл
-export const parseJSON = <T = any>(filePath: string) => {
-  if (fs.existsSync(filePath)) {
-    return JSON.parse(fs.readFileSync(filePath, 'utf-8')) as T;
-  }
-
-  return {} as T;
-}
-
-// Сохраняем JSON-объект в файл
-export const saveJSON = (filePath: string, data: any) => {
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2))
+export const filterRates = (defaultRates: IRatesDefault[], rates?: Record<string, number>) => {
+    return defaultRates.reduce((acc, currency) => {
+      acc[currency] = rates?.[currency] ?? 1;
+      return acc;
+    }, {} as Record<IRatesDefault, number>);
 }

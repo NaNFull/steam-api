@@ -1,39 +1,35 @@
 import path from "path";
-import fs from "fs";
 import { RequestHandler } from 'express';
 import {DataTradeit, IResultData, ITradeitDataResponse} from "../types/tradeit.types";
-import {parseJSON, saveJSON} from "../utils/tradeitUtils";
-import {ISteamSettings} from "../types/steam.types";
+import {
+  getSettingsSteam,
+  parseJSON,
+  saveJSON,
+  settingsSteamPath
+} from "../utils/baseUtils";
 import {fetchData} from "../utils/baseUtils";
 import dayjs from "dayjs";
-
-// Синхронизация данных приложения
-const dataPath = path.join(__dirname, '../../data');
-const webPath = path.join(dataPath, 'web');
-
-// Проверка существования папки data, и создание ее, если она не существует
-if (!fs.existsSync(dataPath)) {
-  fs.mkdirSync(dataPath);
-}
+import isNil from "lodash/isNil";
+import {filterRates, getRatesSteam, saveRatesSteam} from "../utils/tradeitUtils";
 
 export default class Tradeit {
   readonly #urlOld = 'https://old.tradeit.gg';
   readonly #url = 'https://tradeit.gg';
-  readonly #apiRouter = 'api/v2';
   readonly #pathInventory: string;
   readonly #pathMyInventory: string;
   readonly #pathCurrencies: string;
 
   public constructor() {
-    this.#pathInventory = path.join(this.#url, this.#apiRouter, 'inventory');
+    const apiRouter = 'api/v2';
+
+    this.#pathInventory = path.join(this.#url, apiRouter, 'inventory');
     this.#pathMyInventory = path.join(this.#pathInventory, 'my/data?fresh=1');
-    this.#pathCurrencies = path.join(this.#url, this.#apiRouter, 'exchange-rate');
+    this.#pathCurrencies = path.join(this.#url, apiRouter, 'exchange-rate');
   }
 
   // TODO: разделить логику и оптимизировать решение
   public getData: RequestHandler = async ({ url, query: { gameId } }, res) => {
     const urlData = path.join(this.#pathInventory, url);
-    const urlCurrencies = path.join(this.#url, this.#pathCurrencies);
 
     if (!gameId || typeof gameId !== 'string') {
       console.error('Error: Отсутствует gameId:', gameId);
@@ -42,14 +38,15 @@ export default class Tradeit {
     }
 
     const nowDateValue = dayjs().valueOf();
-    const filePath = path.join(dataPath, `steam.${gameId}.json`);
+    const filePath = path.join(settingsSteamPath, `steam.${gameId}.json`);
     const existingData: DataTradeit = parseJSON(filePath);
-    const responsePromise = fetchData<ITradeitDataResponse>(urlData, res);
+    const requestRates = this.fetchRates();
+    const requestData = fetchData<ITradeitDataResponse>(urlData, res);
 
     const [
       resultData,
       resultRates
-    ] = await Promise.all([responsePromise, this.fetchRates()]);
+    ] = await Promise.all([requestData, requestRates]);
 
     if (resultData) {
       resultData.items.map(({
@@ -91,8 +88,8 @@ export default class Tradeit {
         }
       });
     }
-    const settingsPath = path.join(dataPath, `steam.settings.json`);
-    const { profitPercent, currency, remainder } = parseJSON<ISteamSettings>(settingsPath);
+
+    const { profitPercent, currency, remainder } = getSettingsSteam();
     const result: IResultData = {
       items: Object.values(existingData).map(({
         id,
@@ -132,12 +129,12 @@ export default class Tradeit {
   // TODO: В разработке
   public getMyData: RequestHandler = async (_req, res) => {
     const urlData = path.join(this.#url, this.#pathMyInventory);
-    const filePath = path.join(webPath, `tradeit.my.inventory.json`);
-
-    // Проверка существования папки gameId, и создание ее, если она не существует
-    if (!fs.existsSync(webPath)) {
-      fs.mkdirSync(webPath);
-    }
+    // const filePath = path.join(webPath, `tradeit.my.inventory.json`);
+    //
+    // // Проверка существования папки gameId, и создание ее, если она не существует
+    // if (!fs.existsSync(webPath)) {
+    //   fs.mkdirSync(webPath);
+    // }
 
     try {
       const response = await fetch(urlData);
@@ -153,11 +150,10 @@ export default class Tradeit {
       }
     } catch (error) {
       console.error('Error:', error);
-      res.status(500).send('Internal Server Error');
+      res.status(500).send('Internal Server Error getMyData');
     }
   }
 
-  // TODO: В разработке
   public getCurrencies: RequestHandler = async (_req, res) => {
     const urlCurrencies = path.join(this.#url, this.#pathCurrencies);
 
@@ -175,27 +171,30 @@ export default class Tradeit {
       }
     } catch (error) {
       console.error('Error:', error);
-      res.status(500).send('Internal Server Error');
+      res.status(500).send('Internal Server Error getCurrencies');
     }
   }
 
+  // TODO: Оптимизировать код
   public fetchRates = async () => {
-    const settingsPath = path.join(dataPath, `steam.settings.json`);
-    const settingsData = parseJSON<ISteamSettings>(settingsPath);
-    const { rates, checkRates } = settingsData;
+    const { defaultRates } = getSettingsSteam();
+    const { checkRates = 0, rates } = getRatesSteam();
+    const nowDate = new Date().valueOf();
 
     try {
-      if ((new Date().valueOf() - checkRates) / 60 / 1000 > 60) {
+      if ((nowDate - checkRates) / 60 / 1000 > 60 ||  isNil(rates)) {
         const response = await fetch(this.#pathCurrencies);
 
         if (response.ok) {
           // Получаем данные от целевого сервера
           const data = await response.json();
 
-          settingsData.rates = data.rates;
-          saveJSON(settingsPath, settingsData);
+          saveRatesSteam({
+            checkRates: nowDate,
+            rates: data.rates
+          })
 
-          return data.rates as Record<string, number>;
+          return filterRates(defaultRates, data.rates as Record<string, number>);
         } else {
           // Если статус не ок, отправляем соответствующий статус и сообщение
           console.error('status:', response.status, 'info:', await response.text());
@@ -204,6 +203,7 @@ export default class Tradeit {
     } catch (error) {
       console.error('Error:', error);
     }
-    return rates;
+
+    return filterRates(defaultRates, rates);
   }
 }
