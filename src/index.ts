@@ -6,7 +6,7 @@ import swaggerUi from 'swagger-ui-express';
 import cors from './middleware/cors.middleware';
 import Router from './routes';
 
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT ?? 3002;
 
 const app: Application = express();
 

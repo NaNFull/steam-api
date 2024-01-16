@@ -1,6 +1,6 @@
 import type { RequestHandler } from 'express';
 
-export default class Base {
+export default class Steam {
   public postData: RequestHandler = (req, res) => {
     try {
       const requestData = req.body;

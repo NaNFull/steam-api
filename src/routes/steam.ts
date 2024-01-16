@@ -1,9 +1,9 @@
 import express from 'express';
 
-import BaseController from '../controllers/base';
+import SteamController from '../controllers/steam';
 
 const router = express.Router();
-const controller = new BaseController();
+const controller = new SteamController();
 
 router.post('/data', controller.postData);
 router.get('/data', controller.getData);
