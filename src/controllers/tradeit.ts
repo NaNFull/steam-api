@@ -4,9 +4,11 @@ import dayjs from 'dayjs';
 import type { RequestHandler } from 'express';
 import isNil from 'lodash/isNil';
 
-import type { DataTradeit, IResultData, ITradeitDataResponse } from '../types/tradeit.types';
-import { fetchData, getSettingsSteam, parseJSON, saveJSON, settingsSteamPath } from '../utils/baseUtils';
-import { filterRates, getRatesSteam, saveRatesSteam } from '../utils/tradeitUtils';
+import type { ITradeitDataResponse } from '../types/tradeit.types';
+import { fetchData, saveJSON } from '../utils/baseUtils';
+import { getSettingsSteam, mergeResult } from '../utils/steamUtils';
+import { filterRates, getRates, saveRates } from '../utils/tradeitUtils';
+import SteamController from './steam';
 
 export default class Tradeit {
   readonly #url = 'https://tradeit.gg';
@@ -33,8 +35,8 @@ export default class Tradeit {
     }
 
     const nowDateValue = dayjs().valueOf();
-    const filePath = path.join(settingsSteamPath, `steam.${gameId}.json`);
-    const existingData = parseJSON<DataTradeit>(filePath) ?? {};
+    const controller = new SteamController();
+    const existingData = controller.getExistingData('value', gameId);
     const requestRates = this.fetchRates();
     const requestData = fetchData<ITradeitDataResponse>(urlData, res);
 
@@ -79,36 +81,13 @@ export default class Tradeit {
         }
       }
     }
-
-    const { currency = 'RUB', profitPercent = 0.7, remainder = 2 } = getSettingsSteam() ?? {};
-    const result: IResultData = {
-      items: Object.values(existingData).map(({ id, prices, ...opts }) => {
-        const rate = resultRates[currency];
-        const tempPrice = prices.map(([date, data], index) => ({
-          date,
-          id: index,
-          priceInCurrency: (rate * data) / 100,
-          priceTM: ((rate * data) / 100) * profitPercent,
-          priceUSD: data / 100
-        }));
-        const { priceInCurrency, priceTM, priceUSD } = tempPrice[0];
-
-        return {
-          currency,
-          id,
-          key: id,
-          priceInCurrency,
-          priceTM,
-          priceUSD,
-          prices: tempPrice,
-          remainder,
-          ...opts
-        };
-      })
-    };
+    const result = mergeResult(existingData, resultRates);
+    const gamePath = controller.getGamePath('value', gameId);
 
     // Сохраняем JSON-объект в файл
-    saveJSON(filePath, existingData);
+    if (gamePath) {
+      saveJSON(gamePath, existingData);
+    }
 
     res.json(result);
   };
@@ -165,7 +144,7 @@ export default class Tradeit {
   // TODO: Оптимизировать код
   public fetchRates = async () => {
     const { defaultRates } = getSettingsSteam() ?? {};
-    const { checkRates = 0, rates } = getRatesSteam() ?? {};
+    const { checkRates = 0, rates } = getRates();
     const nowDate = Date.now();
 
     try {
@@ -176,7 +155,7 @@ export default class Tradeit {
           // Получаем данные от целевого сервера
           const data = await response.json();
 
-          saveRatesSteam({
+          saveRates({
             checkRates: nowDate,
             rates: data.rates
           });

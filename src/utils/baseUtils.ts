@@ -3,10 +3,7 @@ import path from 'node:path';
 
 import type { Response } from 'express';
 
-import type { ISteamSettings } from '../types/steam.types';
-
 const dataPath = path.join(__dirname, '../../data');
-const settingsPath = path.join(dataPath, `steam.settings.json`);
 
 export async function fetchData<T = any>(url: string, res: Response) {
   try {
@@ -47,12 +44,4 @@ export const saveJSON = (filePath: string, data: any) => {
   }
 
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-};
-
-export const settingsSteamPath = dataPath;
-
-export const getSettingsSteam = () => parseJSON<ISteamSettings>(settingsPath);
-
-export const saveSettingsSteam = (data: ISteamSettings) => {
-  saveJSON(settingsPath, data);
 };

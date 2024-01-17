@@ -1,6 +1,7 @@
 {
   "profitPercent": 0.7,
   "remainder": 2,
+  "typeGame": "RUST",
   "currency": "RUB",
   "defaultRates": [
     "EUR",

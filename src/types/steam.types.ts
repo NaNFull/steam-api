@@ -1,9 +1,14 @@
 export interface ISteamSettings {
   profitPercent: number;
   remainder: number;
+  typeGame: IKeyGame;
   currency: IRatesDefault;
   defaultRates: IRatesDefault[];
 }
+
+export type IGame = Record<IKeyGame, number>;
+
+export type IKeyGame = 'TF2' | 'CS2' | 'RUST';
 
 export type IRatesDefault =
   | 'EUR'
@@ -22,4 +27,47 @@ export type IRatesDefault =
 export interface IRatesSteam {
   checkRates?: number;
   rates?: Record<string, number>;
+}
+
+export interface ItemData {
+  id: number;
+  groupId: number;
+  prices: [number, number][];
+  sitePrice: number;
+  priceForTrade: number;
+  metaMappings: {
+    category: number;
+    item: number;
+  };
+  imgURL: string;
+  name: string;
+  steamAppId: number;
+  steamTags: string[];
+  counts: number;
+  currentStock?: number;
+  wantedStock?: number;
+}
+
+export type IExistingData = Record<string, ItemData>;
+
+export interface IPriceHistory {
+  id: number;
+  date: number;
+  priceUSD: number;
+  priceTM: number;
+  priceInCurrency: number;
+}
+
+export interface IResultItemData extends Omit<ItemData, 'prices'> {
+  key: number;
+  remainder: number;
+  currency: string;
+  prices: IPriceHistory[];
+  priceUSD: number;
+  priceInCurrency: number;
+  priceTM: number;
+}
+
+export interface IResultData {
+  items: IResultItemData[];
 }

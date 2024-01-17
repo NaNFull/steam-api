@@ -8,16 +8,16 @@ const dataPath = path.join(__dirname, '../../data');
 const tradeitPath = path.join(dataPath, 'tradeit');
 const ratesPath = path.join(tradeitPath, `temp.rates.json`);
 
-export const getRatesSteam = () => {
+export const getRates = () => {
   // Проверка существования папки tradeit, и создание ее, если она не существует
   if (!fs.existsSync(tradeitPath)) {
     fs.mkdirSync(tradeitPath);
   }
 
-  return parseJSON<IRatesSteam>(ratesPath);
+  return parseJSON<IRatesSteam>(ratesPath) ?? {};
 };
 
-export const saveRatesSteam = (data: IRatesSteam) => {
+export const saveRates = (data: IRatesSteam) => {
   // Проверка существования папки tradeit, и создание ее, если она не существует
   if (!fs.existsSync(tradeitPath)) {
     fs.mkdirSync(tradeitPath);
