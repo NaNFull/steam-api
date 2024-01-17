@@ -4,26 +4,31 @@ import type { RequestHandler } from 'express';
 
 import type { IExistingData, IGame, IKeyGame, ISteamSettings } from '../types/steam.types';
 import { parseJSON } from '../utils/baseUtils';
-import { getSettingsSteam, mergeResult } from '../utils/steamUtils';
+import { getSettingsSteam, mergeResult, saveSettingsSteam, settingsSteamPath } from '../utils/steamUtils';
 import Tradeit from './tradeit';
 
-const dataPath = path.join(__dirname, '../../data');
-
 export default class Steam {
-  readonly #settings: ISteamSettings | null;
+  readonly #settings: ISteamSettings;
   readonly #gameTypes: IGame = {
     CS2: 730,
     RUST: 252_490,
     TF2: 440
   };
+  readonly #defaultSettings: ISteamSettings = {
+    currency: 'RUB',
+    defaultRates: ['EUR', 'GBP', 'RUB', 'PHP', 'AUD', 'BRL', 'HKD', 'JPY', 'MXN', 'THB', 'TRY', 'ILS'],
+    profitPercent: 0.7,
+    remainder: 2,
+    typeGame: 'RUST'
+  };
 
   public constructor() {
-    this.#settings = getSettingsSteam();
+    this.#settings = getSettingsSteam() ?? this.#defaultSettings;
   }
 
   public getData: RequestHandler = async (_req, res) => {
     try {
-      const { typeGame } = this.#settings ?? {};
+      const { typeGame } = this.#settings;
       const existingData = this.onChangeData(typeGame);
 
       const model = new Tradeit();
@@ -37,13 +42,24 @@ export default class Steam {
     }
   };
 
-  public postData: RequestHandler = (req, res) => {
+  public postData: RequestHandler = async (req, res) => {
     try {
-      const requestData = req.body;
+      const { profitPercent, remainder, typeGame, ...ops } = this.#settings;
 
-      console.log('body is', requestData);
+      saveSettingsSteam({
+        profitPercent: Number.parseFloat(req.body?.profitPercent ?? profitPercent),
+        remainder: Number.parseInt(req.body?.remainder ?? remainder, 10),
+        typeGame,
+        ...ops
+      });
 
-      res.json(requestData);
+      const existingData = this.onChangeData(typeGame);
+
+      const model = new Tradeit();
+      const resultRates = await model.fetchRates();
+      const result = mergeResult(existingData, resultRates);
+
+      res.json(result);
     } catch (error) {
       console.error('Error:', error);
       res.status(500).send('Internal Server Error');
@@ -103,7 +119,7 @@ export default class Steam {
       if (gameKey && this.#gameTypes[gameKey]) {
         const gameID = this.#gameTypes[gameKey];
 
-        return path.join(dataPath, `steam.${gameID}.json`);
+        return path.join(settingsSteamPath, `steam.${gameID}.json`);
       }
     }
 

@@ -25,9 +25,10 @@ export const mergeResult = (existingData: IExistingData, resultRates: Record<str
         id: index,
         priceInCurrency: (rate * data) / 100,
         priceTM: ((rate * data) / 100) * profitPercent,
-        priceUSD: data / 100
+        priceUSD: data / 100,
+        priceUSDTM: (data / 100) * profitPercent
       }));
-      const { priceInCurrency, priceTM, priceUSD } = tempPrice[0];
+      const { priceInCurrency, priceTM, priceUSD, priceUSDTM } = tempPrice[0];
 
       return {
         currency,
@@ -36,6 +37,7 @@ export const mergeResult = (existingData: IExistingData, resultRates: Record<str
         priceInCurrency,
         priceTM,
         priceUSD,
+        priceUSDTM,
         prices: tempPrice,
         remainder,
         ...opts

@@ -54,6 +54,7 @@ export interface IPriceHistory {
   id: number;
   date: number;
   priceUSD: number;
+  priceUSDTM: number;
   priceTM: number;
   priceInCurrency: number;
 }
@@ -64,8 +65,9 @@ export interface IResultItemData extends Omit<ItemData, 'prices'> {
   currency: string;
   prices: IPriceHistory[];
   priceUSD: number;
-  priceInCurrency: number;
+  priceUSDTM: number;
   priceTM: number;
+  priceInCurrency: number;
 }
 
 export interface IResultData {
