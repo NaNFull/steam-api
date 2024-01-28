@@ -63,6 +63,7 @@ export default class Tradeit {
           if (oldPrice !== price) {
             item.prices.unshift([nowDateValue, price]);
           }
+
           item.counts = resultData.counts[id];
         } else {
           existingData[id] = {
@@ -141,7 +142,6 @@ export default class Tradeit {
     }
   };
 
-  // TODO: Оптимизировать код
   public fetchRates = async () => {
     const { defaultRates } = getSettingsSteam() ?? {};
     const { checkRates = 0, rates } = getRates();

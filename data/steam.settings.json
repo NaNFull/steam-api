@@ -1,20 +1,24 @@
 {
-  "profitPercent": 0.7,
-  "remainder": 2,
-  "typeGame": "RUST",
+  "cacheTradeit": false,
   "currency": "RUB",
+  "maxPrice": 100000,
+  "minPrice": 0,
+  "profitPercent": 0.7,
+  "remainder": 0,
+  "typeGame": "RUST",
   "defaultRates": [
     "EUR",
     "GBP",
     "RUB",
+    "CNY",
+    "TRY",
+    "JPY",
     "PHP",
     "AUD",
     "BRL",
     "HKD",
-    "JPY",
     "MXN",
     "THB",
-    "TRY",
     "ILS"
   ]
 }

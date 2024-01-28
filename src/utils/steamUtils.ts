@@ -4,13 +4,14 @@ import type { IExistingData, IResultData, ISteamSettings } from '../types/steam.
 import { parseJSON, saveJSON } from './baseUtils';
 
 const dataPath = path.join(__dirname, '../../data');
-const settingsPath = path.join(dataPath, `steam.settings.json`);
+const settingsPath = path.join(dataPath, 'steam.settings.json');
 
 export const settingsSteamPath = dataPath;
 
 export const getSettingsSteam = () => parseJSON<ISteamSettings>(settingsPath);
 
 export const saveSettingsSteam = (data: ISteamSettings) => {
+  console.log('data', data);
   saveJSON(settingsPath, data);
 };
 

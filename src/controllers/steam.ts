@@ -15,8 +15,11 @@ export default class Steam {
     TF2: 440
   };
   readonly #defaultSettings: ISteamSettings = {
+    cacheTradeit: false,
     currency: 'RUB',
-    defaultRates: ['EUR', 'GBP', 'RUB', 'PHP', 'AUD', 'BRL', 'HKD', 'JPY', 'MXN', 'THB', 'TRY', 'ILS'],
+    defaultRates: ['EUR', 'GBP', 'RUB', 'CNY', 'TRY', 'JPY', 'PHP', 'AUD', 'BRL', 'HKD', 'MXN', 'THB', 'ILS'],
+    maxPrice: 100_000,
+    minPrice: 0,
     profitPercent: 0.7,
     remainder: 2,
     typeGame: 'RUST'
@@ -44,12 +47,16 @@ export default class Steam {
 
   public postData: RequestHandler = async (req, res) => {
     try {
-      const { profitPercent, remainder, typeGame, ...ops } = this.#settings;
+      const { cacheTradeit, currency, maxPrice, minPrice, profitPercent, remainder, typeGame, ...ops } = this.#settings;
 
       saveSettingsSteam({
-        profitPercent: Number.parseFloat(req.body?.profitPercent ?? profitPercent),
-        remainder: Number.parseInt(req.body?.remainder ?? remainder, 10),
-        typeGame,
+        cacheTradeit: req.body?.cacheTradeit ?? cacheTradeit,
+        currency: req.body?.currency ?? currency,
+        maxPrice: req.body?.maxPrice ?? maxPrice,
+        minPrice: req.body?.minPrice ?? minPrice,
+        profitPercent: (req.body?.profitPercent ?? profitPercent) / 100,
+        remainder: req.body?.remainder ?? remainder,
+        typeGame: req.body?.gameId ?? typeGame,
         ...ops
       });
 
@@ -60,6 +67,31 @@ export default class Steam {
       const result = mergeResult(existingData, resultRates);
 
       res.json(result);
+    } catch (error) {
+      console.error('Error:', error);
+      res.status(500).send('Internal Server Error');
+    }
+  };
+
+  public getFilters: RequestHandler = async (_req, res) => {
+    try {
+      const tempSettings = getSettingsSteam() ?? this.#settings;
+      const { cacheTradeit, currency, maxPrice, minPrice, profitPercent, remainder, typeGame } = tempSettings;
+
+      console.log('temp', tempSettings);
+      const model = new Tradeit();
+      const resultRates = await model.fetchRates();
+
+      res.json({
+        cacheTradeit,
+        currencies: resultRates,
+        currency,
+        gameId: typeGame,
+        maxPrice,
+        minPrice,
+        profitPercent: profitPercent * 100,
+        remainder
+      });
     } catch (error) {
       console.error('Error:', error);
       res.status(500).send('Internal Server Error');

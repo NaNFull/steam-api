@@ -1,4 +1,7 @@
 export interface ISteamSettings {
+  cacheTradeit: boolean;
+  minPrice: number;
+  maxPrice: number;
   profitPercent: number;
   remainder: number;
   typeGame: IKeyGame;
@@ -22,7 +25,8 @@ export type IRatesDefault =
   | 'MXN'
   | 'THB'
   | 'TRY'
-  | 'ILS';
+  | 'ILS'
+  | 'CNY';
 
 export interface IRatesSteam {
   checkRates?: number;
