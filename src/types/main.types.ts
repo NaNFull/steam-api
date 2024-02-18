@@ -9,16 +9,11 @@ export interface IMainSettings {
   defaultRates: IRatesDefault[];
 }
 
-export type IKeyGame = 'TF2' | 'CS2' | 'RUST' | 'STEAM';
+export type IKeyGame = 730 | 252_490 | 440 | 753;
 
-export type IGame = Record<IKeyGame, number>;
+export type IValueGame = 'CS2' | 'RUST' | 'TF2' | 'STEAM';
 
-export enum EGame {
-  CS2 = 730,
-  RUST = 252_490,
-  TF2 = 440,
-  STEAM = 753,
-}
+export type IGame = Record<IKeyGame, IValueGame>;
 
 export type IRatesDefault =
   | 'EUR'
@@ -62,20 +57,20 @@ export interface ItemData {
 
 export type IExistingData = Record<string, ItemData>;
 
-export interface IPriceHistory {
-  id: number;
-  date: number;
+export interface IResultItemData extends Omit<ItemData, 'prices'> {
+  key: number;
+  remainder: number;
+  currency: string;
+  prices: IPriceHistory[];
   priceUSD: number;
   priceUSDTM: number;
   priceTM: number;
   priceInCurrency: number;
 }
 
-export interface IResultItemData extends Omit<ItemData, 'prices'> {
-  key: number;
-  remainder: number;
-  currency: string;
-  prices: IPriceHistory[];
+export interface IPriceHistory {
+  id: number;
+  date: number;
   priceUSD: number;
   priceUSDTM: number;
   priceTM: number;

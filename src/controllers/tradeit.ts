@@ -25,20 +25,28 @@ export default class Tradeit {
   }
 
   // TODO: разделить логику и оптимизировать решение
-  public getData: RequestHandler = async ({ query: { gameId, offset }, url, ...ops }, res) => {
+  public getData: RequestHandler = async ({ query: { gameId: queryGameId, offset }, url, ...ops }, res) => {
     const urlData = new URL(this.#urlInventory);
 
     urlData.href = joinPath(urlData.href, url);
 
-    if (!gameId || typeof gameId !== 'string') {
-      console.error('Error: Отсутствует gameId:', gameId);
-      res.status(500).send(`Internal Server Error - Отсутствует gameId: ${gameId}`);
+    if (!queryGameId || typeof queryGameId !== 'string') {
+      console.error('Error: Отсутствует gameId:', queryGameId);
+      res.status(500).send(`Internal Server Error - Отсутствует gameId: ${queryGameId}`);
+      return;
+    }
+
+    const controller = new MainController();
+    const gameId = controller.getGameId(queryGameId);
+
+    if (!gameId) {
+      console.error('Error: Нет такого gameId:', queryGameId);
+      res.status(500).send(`Internal Server Error - Нет такого gameId: ${queryGameId}`);
       return;
     }
 
     const nowDateValue = dayjs().valueOf();
-    const controller = new MainController();
-    const existingData = controller.getExistingData('value', gameId);
+    const existingData = controller.getExistingData(gameId);
     const parseOffset = typeof offset === 'string' ? Number.parseInt(offset, 10) : 0;
     let tempOffset = 0;
 
@@ -88,13 +96,13 @@ export default class Tradeit {
           }
         }
       }
-      const gamePath = controller.getGamePath('value', gameId);
+      const gamePath = controller.getGamePath(gameId);
 
       // Сохраняем JSON-объект в файл
       if (gamePath) {
         saveJSON(gamePath, existingData);
       }
-      console.log('GET :', resultData?.items.length, 'URL:', urlData.href);
+      console.log('GET :', resultData?.items.length, 'URL:', urlData.href.slice(0, 60));
 
       if (resultData && resultData.items.length === 500) {
         tempOffset += 500;
