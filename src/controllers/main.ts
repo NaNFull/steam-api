@@ -2,19 +2,19 @@ import path from 'node:path';
 
 import type { RequestHandler } from 'express';
 
-import type { IExistingData, IGame, IKeyGame, ISteamSettings } from '../types/steam.types';
+import type { IExistingData, IGame, IKeyGame, IMainSettings } from '../types/main.types';
 import { parseJSON } from '../utils/baseUtils';
-import { getSettingsSteam, mergeResult, saveSettingsSteam, settingsSteamPath } from '../utils/steamUtils';
+import { getSettingsMain, mergeResult, saveSettingsMain, settingsMainPath } from '../utils/mainUtils';
 import Tradeit from './tradeit';
 
-export default class Steam {
-  readonly #settings: ISteamSettings;
+export default class Main {
+  readonly #settings: IMainSettings;
   readonly #gameTypes: IGame = {
     CS2: 730,
     RUST: 252_490,
     TF2: 440
   };
-  readonly #defaultSettings: ISteamSettings = {
+  readonly #defaultSettings: IMainSettings = {
     cacheTradeit: false,
     currency: 'RUB',
     defaultRates: ['EUR', 'GBP', 'RUB', 'CNY', 'TRY', 'JPY', 'PHP', 'AUD', 'BRL', 'HKD', 'MXN', 'THB', 'ILS'],
@@ -26,7 +26,7 @@ export default class Steam {
   };
 
   public constructor() {
-    this.#settings = getSettingsSteam() ?? this.#defaultSettings;
+    this.#settings = getSettingsMain() ?? this.#defaultSettings;
   }
 
   public getData: RequestHandler = async (_req, res) => {
@@ -49,7 +49,7 @@ export default class Steam {
     try {
       const { cacheTradeit, currency, maxPrice, minPrice, profitPercent, remainder, typeGame, ...ops } = this.#settings;
 
-      saveSettingsSteam({
+      saveSettingsMain({
         cacheTradeit: req.body?.cacheTradeit ?? cacheTradeit,
         currency: req.body?.currency ?? currency,
         maxPrice: req.body?.maxPrice ?? maxPrice,
@@ -75,7 +75,7 @@ export default class Steam {
 
   public getFilters: RequestHandler = async (_req, res) => {
     try {
-      const tempSettings = getSettingsSteam() ?? this.#settings;
+      const tempSettings = getSettingsMain() ?? this.#settings;
       const { cacheTradeit, currency, maxPrice, minPrice, profitPercent, remainder, typeGame } = tempSettings;
 
       const model = new Tradeit();
@@ -150,7 +150,7 @@ export default class Steam {
       if (gameKey && this.#gameTypes[gameKey]) {
         const gameID = this.#gameTypes[gameKey];
 
-        return path.join(settingsSteamPath, `steam.${gameID}.json`);
+        return path.join(settingsMainPath, `skins.${gameID}.json`);
       }
     }
 

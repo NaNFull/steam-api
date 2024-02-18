@@ -1,4 +1,4 @@
-export interface ISteamSettings {
+export interface IMainSettings {
   cacheTradeit: boolean;
   minPrice: number;
   maxPrice: number;
@@ -28,7 +28,7 @@ export type IRatesDefault =
   | 'ILS'
   | 'CNY';
 
-export interface IRatesSteam {
+export interface IRates {
   checkRates?: number;
   rates?: Record<string, number>;
 }

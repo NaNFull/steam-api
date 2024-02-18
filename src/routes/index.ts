@@ -1,11 +1,11 @@
 import express from 'express';
 
-import SteamRouter from './steam';
+import MainRouter from './main';
 import TradeitRouter from './tradeit';
 
 const router = express.Router();
 
-router.use('/inventory', SteamRouter);
+router.use('/inventory', MainRouter);
 router.use('/tradeit', TradeitRouter);
 
 export default router;

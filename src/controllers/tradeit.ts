@@ -6,9 +6,9 @@ import isNil from 'lodash/isNil';
 
 import type { ITradeitDataResponse } from '../types/tradeit.types';
 import { fetchData, saveJSON } from '../utils/baseUtils';
-import { getSettingsSteam } from '../utils/steamUtils';
+import { getSettingsMain } from '../utils/mainUtils';
 import { filterRates, getRates, saveRates } from '../utils/tradeitUtils';
-import SteamController from './steam';
+import MainController from './main';
 
 export default class Tradeit {
   readonly #url = new URL('https://tradeit.gg');
@@ -37,7 +37,7 @@ export default class Tradeit {
     }
 
     const nowDateValue = dayjs().valueOf();
-    const controller = new SteamController();
+    const controller = new MainController();
     const existingData = controller.getExistingData('value', gameId);
     const parseOffset = typeof offset === 'string' ? Number.parseInt(offset, 10) : 0;
     let tempOffset = 0;
@@ -161,7 +161,7 @@ export default class Tradeit {
   };
 
   public fetchRates = async () => {
-    const { defaultRates } = getSettingsSteam() ?? {};
+    const { defaultRates } = getSettingsMain() ?? {};
     const { checkRates = 0, rates } = getRates();
     const nowDate = Date.now();
 

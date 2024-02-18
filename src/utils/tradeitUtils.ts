@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import type { IRatesDefault, IRatesSteam } from '../types/steam.types';
+import type { IRates, IRatesDefault } from '../types/main.types';
 import { parseJSON, saveJSON } from './baseUtils';
 
 const dataPath = path.join(__dirname, '../../data');
@@ -14,10 +14,10 @@ export const getRates = () => {
     fs.mkdirSync(tradeitPath);
   }
 
-  return parseJSON<IRatesSteam>(ratesPath) ?? {};
+  return parseJSON<IRates>(ratesPath) ?? {};
 };
 
-export const saveRates = (data: IRatesSteam) => {
+export const saveRates = (data: IRates) => {
   // Проверка существования папки tradeit, и создание ее, если она не существует
   if (!fs.existsSync(tradeitPath)) {
     fs.mkdirSync(tradeitPath);

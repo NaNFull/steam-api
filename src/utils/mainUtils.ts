@@ -1,21 +1,21 @@
 import path from 'node:path';
 
-import type { IExistingData, IResultData, ISteamSettings } from '../types/steam.types';
+import type { IExistingData, IMainSettings, IResultData } from '../types/main.types';
 import { parseJSON, saveJSON } from './baseUtils';
 
 const dataPath = path.join(__dirname, '../../data');
-const settingsPath = path.join(dataPath, 'steam.settings.json');
+const settingsPath = path.join(dataPath, 'main.settings.json');
 
-export const settingsSteamPath = dataPath;
+export const settingsMainPath = dataPath;
 
-export const getSettingsSteam = () => parseJSON<ISteamSettings>(settingsPath);
+export const getSettingsMain = () => parseJSON<IMainSettings>(settingsPath);
 
-export const saveSettingsSteam = (data: ISteamSettings) => {
+export const saveSettingsMain = (data: IMainSettings) => {
   saveJSON(settingsPath, data);
 };
 
 export const mergeResult = (existingData: IExistingData, resultRates: Record<string, number>): IResultData => {
-  const { currency = 'RUB', profitPercent = 0.7, remainder = 2 } = getSettingsSteam() ?? {};
+  const { currency = 'RUB', profitPercent = 0.7, remainder = 2 } = getSettingsMain() ?? {};
 
   return {
     items: Object.values(existingData).map(({ id, prices, ...opts }) => {
