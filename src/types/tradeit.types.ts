@@ -37,9 +37,10 @@ export interface Item {
 }
 
 export interface MetaMappings {
-  category: number;
-  item: number;
-  rarity: string;
-  type: string;
-  agent: string;
+  collection?: number;
+  category?: number;
+  item?: number;
+  rarity?: string;
+  type?: string;
+  agent?: string;
 }

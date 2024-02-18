@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import type { RequestHandler } from 'express';
 
-import type { IExistingData, IKeyGame, IMainSettings } from '../types/main.types';
+import type { IExistingData, IExistingDataCS2, IKeyGame, IMainSettings } from '../types/main.types';
 import { parseJSON } from '../utils/baseUtils';
 import { getSettingsMain, mergeResult, saveSettingsMain, settingsMainPath } from '../utils/mainUtils';
 import Tradeit from './tradeit';
@@ -116,8 +116,12 @@ export default class Main {
     return existingData;
   };
 
-  public getExistingData = (gameID: IKeyGame): IExistingData => {
+  public getExistingData = (gameID: IKeyGame): IExistingData | IExistingDataCS2 => {
     const gamePath = this.getGamePath(gameID);
+
+    if (gameID === 730) {
+      return parseJSON<IExistingDataCS2>(gamePath) ?? {};
+    }
 
     return parseJSON<IExistingData>(gamePath) ?? {};
   };

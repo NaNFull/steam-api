@@ -49,6 +49,7 @@ export default class Tradeit {
     const existingData = controller.getExistingData(gameId);
     const parseOffset = typeof offset === 'string' ? Number.parseInt(offset, 10) : 0;
     let tempOffset = 0;
+    let countsData = 0;
 
     while (tempOffset < parseOffset) {
       urlData.searchParams.set('offset', tempOffset.toString());
@@ -56,7 +57,9 @@ export default class Tradeit {
 
       if (resultData) {
         for (const {
+          floatValues,
           groupId,
+          hasStickers,
           id,
           imgURL,
           metaMappings,
@@ -66,6 +69,8 @@ export default class Tradeit {
           sitePrice,
           steamAppId,
           steamTags,
+          stickers,
+          tradeLockDay,
         } of resultData.items) {
           const item = existingData[id];
 
@@ -83,7 +88,7 @@ export default class Tradeit {
               counts: resultData.counts[id],
               groupId,
               id,
-              imgURL,
+              imgURL: imgURL ?? `https://old.tradeit.gg/static/img/items-webp-256/${id}.webp`,
               metaMappings,
               name,
               priceForTrade,
@@ -92,20 +97,23 @@ export default class Tradeit {
               steamAppId,
               steamTags,
               updateDate: nowDateValue,
+              ...(gameId === 730
+                ? {
+                    floatValues,
+                    hasStickers,
+                    skins: [],
+                    stickers,
+                    tradeLockDay,
+                  }
+                : undefined),
             };
           }
         }
       }
-      const gamePath = controller.getGamePath(gameId);
 
-      // Сохраняем JSON-объект в файл
-      if (gamePath) {
-        saveJSON(gamePath, existingData);
-      }
-      console.log('GET :', resultData?.items.length, 'URL:', urlData.href.slice(0, 60));
-
-      if (resultData && resultData.items.length === 500) {
-        tempOffset += 500;
+      if (resultData && resultData.items.length > 0) {
+        countsData += resultData.items.length;
+        tempOffset += resultData.items.length;
       } else {
         tempOffset = parseOffset;
       }
@@ -116,7 +124,14 @@ export default class Tradeit {
       });
     }
 
-    res.json(true);
+    const gamePath = controller.getGamePath(gameId);
+
+    // Сохраняем JSON-объект в файл
+    if (gamePath) {
+      saveJSON(gamePath, existingData);
+    }
+
+    res.json(countsData);
   };
 
   // TODO: В разработке

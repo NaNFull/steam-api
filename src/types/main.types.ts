@@ -1,3 +1,5 @@
+import type { MetaMappings } from './tradeit.types';
+
 export interface IMainSettings {
   cacheTradeit: boolean;
   minPrice: number;
@@ -41,10 +43,7 @@ export interface ItemData {
   prices: [number, number][];
   sitePrice: number;
   priceForTrade: number;
-  metaMappings: {
-    category: number;
-    item: number;
-  };
+  metaMappings: MetaMappings;
   imgURL: string;
   name: string;
   steamAppId: number;
@@ -55,7 +54,31 @@ export interface ItemData {
   wantedStock?: number;
 }
 
+export interface IStickers {
+  slot: number;
+  name: string;
+  link: string;
+  price: number;
+  updateDate: number;
+}
+
+export interface SkinCS2 {
+  floatValue: number;
+  tradeLockDay?: number;
+  stickers: IStickers[];
+}
+
+export interface ItemDataCS2 extends ItemData {
+  floatValues: number[];
+  tradeLockDay?: number[];
+  skins: SkinCS2[];
+  hasStickers: boolean;
+  stickers: IStickers[];
+}
+
 export type IExistingData = Record<string, ItemData>;
+
+export type IExistingDataCS2 = Record<string, ItemDataCS2>;
 
 export interface IResultItemData extends Omit<ItemData, 'prices'> {
   key: number;
