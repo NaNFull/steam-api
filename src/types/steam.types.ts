@@ -48,6 +48,7 @@ export interface ItemData {
   steamAppId: number;
   steamTags: string[];
   counts: number;
+  updateDate: number;
   currentStock?: number;
   wantedStock?: number;
 }

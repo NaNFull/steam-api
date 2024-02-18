@@ -4,8 +4,8 @@
   "maxPrice": 100000,
   "minPrice": 0,
   "profitPercent": 0.7,
-  "remainder": 0,
-  "typeGame": "RUST",
+  "remainder": 2,
+  "typeGame": 440,
   "defaultRates": [
     "EUR",
     "GBP",

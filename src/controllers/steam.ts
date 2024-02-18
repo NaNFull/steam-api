@@ -78,7 +78,6 @@ export default class Steam {
       const tempSettings = getSettingsSteam() ?? this.#settings;
       const { cacheTradeit, currency, maxPrice, minPrice, profitPercent, remainder, typeGame } = tempSettings;
 
-      console.log('temp', tempSettings);
       const model = new Tradeit();
       const resultRates = await model.fetchRates();
 

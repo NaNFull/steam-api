@@ -1,4 +1,4 @@
-import path from 'node:path';
+import { join as joinPath } from 'node:path/posix';
 
 import dayjs from 'dayjs';
 import type { RequestHandler } from 'express';
@@ -6,27 +6,29 @@ import isNil from 'lodash/isNil';
 
 import type { ITradeitDataResponse } from '../types/tradeit.types';
 import { fetchData, saveJSON } from '../utils/baseUtils';
-import { getSettingsSteam, mergeResult } from '../utils/steamUtils';
+import { getSettingsSteam } from '../utils/steamUtils';
 import { filterRates, getRates, saveRates } from '../utils/tradeitUtils';
 import SteamController from './steam';
 
 export default class Tradeit {
-  readonly #url = 'https://tradeit.gg';
-  readonly #pathInventory: string;
-  readonly #pathMyInventory: string;
-  readonly #pathCurrencies: string;
+  readonly #url = new URL('https://tradeit.gg');
+  readonly #urlInventory = new URL(this.#url);
+  readonly #urlMyInventory = new URL(this.#url);
+  readonly #urlCurrencies = new URL(this.#url);
 
   public constructor() {
     const apiRouter = 'api/v2';
 
-    this.#pathInventory = path.join(this.#url, apiRouter, 'inventory');
-    this.#pathMyInventory = path.join(this.#pathInventory, 'my/data?fresh=1');
-    this.#pathCurrencies = path.join(this.#url, apiRouter, 'exchange-rate');
+    this.#urlInventory.href = joinPath(this.#urlInventory.href, apiRouter, 'inventory');
+    this.#urlMyInventory.href = joinPath(this.#urlInventory.href, 'my/data?fresh=1');
+    this.#urlCurrencies.href = joinPath(this.#urlCurrencies.href, apiRouter, 'exchange-rate');
   }
 
   // TODO: разделить логику и оптимизировать решение
-  public getData: RequestHandler = async ({ query: { gameId }, url }, res) => {
-    const urlData = path.join(this.#pathInventory, url);
+  public getData: RequestHandler = async ({ query: { gameId, offset }, url, ...ops }, res) => {
+    const urlData = new URL(this.#urlInventory);
+
+    urlData.href = joinPath(urlData.href, url);
 
     if (!gameId || typeof gameId !== 'string') {
       console.error('Error: Отсутствует gameId:', gameId);
@@ -37,65 +39,81 @@ export default class Tradeit {
     const nowDateValue = dayjs().valueOf();
     const controller = new SteamController();
     const existingData = controller.getExistingData('value', gameId);
-    const requestRates = this.fetchRates();
-    const requestData = fetchData<ITradeitDataResponse>(urlData, res);
+    const parseOffset = typeof offset === 'string' ? Number.parseInt(offset, 10) : 0;
+    let tempOffset = 0;
 
-    const [resultData, resultRates] = await Promise.all([requestData, requestRates]);
+    while (tempOffset < parseOffset) {
+      urlData.searchParams.set('offset', tempOffset.toString());
+      const resultData = await fetchData<ITradeitDataResponse>(urlData.href, res);
 
-    if (resultData) {
-      for (const {
-        groupId,
-        id,
-        imgURL,
-        metaMappings,
-        name,
-        price,
-        priceForTrade,
-        sitePrice,
-        steamAppId,
-        steamTags
-      } of resultData.items) {
-        const item = existingData[id];
+      if (resultData) {
+        for (const {
+          groupId,
+          id,
+          imgURL,
+          metaMappings,
+          name,
+          price,
+          priceForTrade,
+          sitePrice,
+          steamAppId,
+          steamTags
+        } of resultData.items) {
+          const item = existingData[id];
 
-        if (item) {
-          const [_, oldPrice] = item.prices[0];
+          if (item) {
+            const [_, oldPrice] = item.prices[0];
 
-          if (oldPrice !== price) {
-            item.prices.unshift([nowDateValue, price]);
+            if (oldPrice !== price) {
+              item.prices.unshift([nowDateValue, price]);
+            }
+
+            item.counts = resultData.counts[id];
+            item.updateDate = nowDateValue;
+          } else {
+            existingData[id] = {
+              counts: resultData.counts[id],
+              groupId,
+              id,
+              imgURL,
+              metaMappings,
+              name,
+              priceForTrade,
+              prices: [[nowDateValue, price]],
+              sitePrice,
+              steamAppId,
+              steamTags,
+              updateDate: nowDateValue
+            };
           }
-
-          item.counts = resultData.counts[id];
-        } else {
-          existingData[id] = {
-            counts: resultData.counts[id],
-            groupId,
-            id,
-            imgURL,
-            metaMappings,
-            name,
-            priceForTrade,
-            prices: [[nowDateValue, price]],
-            sitePrice,
-            steamAppId,
-            steamTags
-          };
         }
       }
-    }
-    const result = mergeResult(existingData, resultRates);
-    const gamePath = controller.getGamePath('value', gameId);
+      const gamePath = controller.getGamePath('value', gameId);
 
-    // Сохраняем JSON-объект в файл
-    if (gamePath) {
-      saveJSON(gamePath, existingData);
+      // Сохраняем JSON-объект в файл
+      if (gamePath) {
+        saveJSON(gamePath, existingData);
+      }
+      console.log('GET :', resultData?.items.length, 'URL:', urlData.href);
+
+      if (resultData && resultData.items.length === 500) {
+        tempOffset += 500;
+      } else {
+        tempOffset = parseOffset;
+      }
+
+      // Delay for 1 second
+      await new Promise((resolve) => {
+        setTimeout(resolve, 1000);
+      });
     }
 
-    res.json(result);
+    res.json(true);
   };
 
   // TODO: В разработке
   public getMyData: RequestHandler = async (_req, res) => {
-    const urlData = path.join(this.#url, this.#pathMyInventory);
+    const urlData = this.#urlMyInventory.href;
     // const filePath = path.join(webPath, `tradeit.my.inventory.json`);
     //
     // // Проверка существования папки gameId, и создание ее, если она не существует
@@ -122,7 +140,7 @@ export default class Tradeit {
   };
 
   public getCurrencies: RequestHandler = async (_req, res) => {
-    const urlCurrencies = path.join(this.#url, this.#pathCurrencies);
+    const urlCurrencies = this.#urlCurrencies.href;
 
     try {
       const response = await fetch(urlCurrencies);
@@ -149,7 +167,7 @@ export default class Tradeit {
 
     try {
       if ((nowDate - checkRates) / 60 / 1000 > 60 || isNil(rates)) {
-        const response = await fetch(this.#pathCurrencies);
+        const response = await fetch(this.#urlCurrencies);
 
         if (response.ok) {
           // Получаем данные от целевого сервера

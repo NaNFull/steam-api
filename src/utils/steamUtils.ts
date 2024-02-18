@@ -11,7 +11,6 @@ export const settingsSteamPath = dataPath;
 export const getSettingsSteam = () => parseJSON<ISteamSettings>(settingsPath);
 
 export const saveSettingsSteam = (data: ISteamSettings) => {
-  console.log('data', data);
   saveJSON(settingsPath, data);
 };
 
