@@ -9,9 +9,16 @@ export interface IMainSettings {
   defaultRates: IRatesDefault[];
 }
 
+export type IKeyGame = 'TF2' | 'CS2' | 'RUST' | 'STEAM';
+
 export type IGame = Record<IKeyGame, number>;
 
-export type IKeyGame = 'TF2' | 'CS2' | 'RUST';
+export enum EGame {
+  CS2 = 730,
+  RUST = 252_490,
+  TF2 = 440,
+  STEAM = 753,
+}
 
 export type IRatesDefault =
   | 'EUR'

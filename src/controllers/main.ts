@@ -12,7 +12,8 @@ export default class Main {
   readonly #gameTypes: IGame = {
     CS2: 730,
     RUST: 252_490,
-    TF2: 440
+    STEAM: 753,
+    TF2: 440,
   };
   readonly #defaultSettings: IMainSettings = {
     cacheTradeit: false,
@@ -22,7 +23,7 @@ export default class Main {
     minPrice: 0,
     profitPercent: 0.7,
     remainder: 2,
-    typeGame: 'RUST'
+    typeGame: 'RUST',
   };
 
   public constructor() {
@@ -57,9 +58,10 @@ export default class Main {
         profitPercent: (req.body?.profitPercent ?? profitPercent) / 100,
         remainder: req.body?.remainder ?? remainder,
         typeGame: req.body?.gameId ?? typeGame,
-        ...ops
+        ...ops,
       });
 
+      console.log('type', typeGame);
       const existingData = this.onChangeData(typeGame);
 
       const model = new Tradeit();
@@ -89,7 +91,7 @@ export default class Main {
         maxPrice,
         minPrice,
         profitPercent: profitPercent * 100,
-        remainder
+        remainder,
       });
     } catch (error) {
       console.error('Error:', error);
@@ -103,7 +105,8 @@ export default class Main {
     switch (type) {
       case 'TF2':
       case 'CS2':
-      case 'RUST': {
+      case 'RUST':
+      case 'STEAM': {
         Object.assign(existingData, this.getExistingData('key', type));
 
         break;
@@ -113,7 +116,7 @@ export default class Main {
           existingData,
           this.getExistingData('key', 'TF2'),
           this.getExistingData('key', 'CS2'),
-          this.getExistingData('key', 'RUST')
+          this.getExistingData('key', 'RUST'),
         );
       }
     }

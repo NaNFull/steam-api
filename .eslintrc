@@ -70,7 +70,7 @@
         // object's key is quoted only when necessary
         "quoteProps": "as-needed",
         // no comma at the end
-        "trailingComma": "none",
+        "trailingComma": "all",
         // spaces are required at the beginning and end of the braces
         "bracketSpacing": true,
         // brackets are required for arrow function parameter, even when there is only one parameter
@@ -224,7 +224,7 @@
           // object's key is quoted only when necessary
           "quoteProps": "as-needed",
           // no comma at the end
-          "trailingComma": "none",
+          "trailingComma": "all",
           // spaces are required at the beginning and end of the braces
           "bracketSpacing": true,
           // brackets are required for arrow function parameter, even when there is only one parameter

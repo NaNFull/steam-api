@@ -57,7 +57,7 @@ export default class Tradeit {
           priceForTrade,
           sitePrice,
           steamAppId,
-          steamTags
+          steamTags,
         } of resultData.items) {
           const item = existingData[id];
 
@@ -83,7 +83,7 @@ export default class Tradeit {
               sitePrice,
               steamAppId,
               steamTags,
-              updateDate: nowDateValue
+              updateDate: nowDateValue,
             };
           }
         }
@@ -175,7 +175,7 @@ export default class Tradeit {
 
           saveRates({
             checkRates: nowDate,
-            rates: data.rates
+            rates: data.rates,
           });
 
           return filterRates(defaultRates, data.rates as Record<string, number>);
