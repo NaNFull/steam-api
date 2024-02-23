@@ -27,8 +27,8 @@ export default class Main {
 
   public getData: RequestHandler = async (_req, res) => {
     try {
-      const { typeGame } = this.#settings;
-      const existingData = this.onChangeData(typeGame);
+      const { cacheTradeit, typeGame } = this.#settings;
+      const existingData = this.onChangeData(typeGame, cacheTradeit);
 
       const model = new Tradeit();
       const resultRates = await model.fetchRates();
@@ -53,7 +53,7 @@ export default class Main {
 
       saveSettingsMain(this.#settings);
 
-      const existingData = this.onChangeData(this.#settings.typeGame);
+      const existingData = this.onChangeData(this.#settings.typeGame, this.#settings.cacheTradeit);
 
       const model = new Tradeit();
       const resultRates = await model.fetchRates();
@@ -90,8 +90,16 @@ export default class Main {
     }
   };
 
-  public onChangeData = (type?: IKeyGame): IExistingData => {
+  public onChangeData = (type?: IKeyGame, cache?: boolean): IExistingData => {
     const existingData: IExistingData = {};
+
+    if (cache) {
+      const pathCache = this.getCachePath();
+
+      Object.assign(existingData, parseJSON<IExistingData | IExistingDataCS2>(pathCache) ?? {});
+
+      return existingData;
+    }
 
     switch (type) {
       case 730:
@@ -140,4 +148,6 @@ export default class Main {
   };
 
   public getGamePath = (gameID: IKeyGame) => path.join(settingsMainPath, `skins.${gameID}.json`);
+
+  public getCachePath = () => path.join(settingsMainPath, `skins.cache.json`);
 }

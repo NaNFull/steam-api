@@ -1,11 +1,11 @@
 {
-  "cacheTradeit": false,
+  "cacheTradeit": true,
   "currency": "RUB",
   "maxPrice": 100000,
   "minPrice": 0,
   "profitPercent": 0.7,
   "remainder": 2,
-  "typeGame": 440,
+  "typeGame": 730,
   "defaultRates": [
     "EUR",
     "GBP",

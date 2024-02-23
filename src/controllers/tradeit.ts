@@ -4,6 +4,7 @@ import dayjs from 'dayjs';
 import type { RequestHandler } from 'express';
 import isNil from 'lodash/isNil';
 
+import type { IExistingData, IExistingDataCS2 } from '../types/main.types';
 import type { ITradeitDataResponse } from '../types/tradeit.types';
 import { fetchData, saveJSON } from '../utils/baseUtils';
 import { getSettingsMain } from '../utils/mainUtils';
@@ -25,7 +26,7 @@ export default class Tradeit {
   }
 
   // TODO: разделить логику и оптимизировать решение
-  public getData: RequestHandler = async ({ query: { gameId: queryGameId, offset }, url, ...ops }, res) => {
+  public getData: RequestHandler = async ({ query: { gameId: queryGameId, limit, offset }, url, ...ops }, res) => {
     const urlData = new URL(this.#urlInventory);
 
     urlData.href = joinPath(urlData.href, url);
@@ -47,12 +48,23 @@ export default class Tradeit {
 
     const nowDateValue = dayjs().valueOf();
     const existingData = controller.getExistingData(gameId);
+    const cacheData: IExistingData | IExistingDataCS2 = {};
     const parseOffset = typeof offset === 'string' ? Number.parseInt(offset, 10) : 0;
+    const tempLimit = typeof limit === 'string' ? Number.parseInt(limit, 10) : 500;
     let tempOffset = 0;
     let countsData = 0;
 
     while (tempOffset < parseOffset) {
       urlData.searchParams.set('offset', tempOffset.toString());
+
+      if (parseOffset - tempOffset < tempLimit) {
+        urlData.searchParams.set('limit', (parseOffset - tempOffset).toString());
+      } else if (parseOffset - tempOffset < 5) {
+        urlData.searchParams.set('limit', '10');
+      } else {
+        urlData.searchParams.set('limit', '500');
+      }
+
       const resultData = await fetchData<ITradeitDataResponse>(urlData.href, res);
 
       if (resultData) {
@@ -108,6 +120,7 @@ export default class Tradeit {
                 : undefined),
             };
           }
+          Object.assign(cacheData, { [id]: existingData[id] });
         }
       }
 
@@ -125,13 +138,27 @@ export default class Tradeit {
     }
 
     const gamePath = controller.getGamePath(gameId);
+    const cachePath = controller.getCachePath();
 
-    // Сохраняем JSON-объект в файл
     if (gamePath) {
       saveJSON(gamePath, existingData);
+      saveJSON(cachePath, cacheData);
     }
 
     res.json(countsData);
+  };
+
+  public getClearCache: RequestHandler = (_req, res) => {
+    const controller = new MainController();
+    const cachePath = controller.getCachePath();
+
+    try {
+      saveJSON(cachePath, {});
+      res.json(true); // Отправляем true если очистка кэша прошла успешно
+    } catch (error) {
+      console.error('Error:', error);
+      res.status(500).send('Internal Server Error'); // Отправляем ошибку, если что-то пошло не так
+    }
   };
 
   // TODO: В разработке
